@@ -5,7 +5,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { games } from "@/data/bracket_list"
 
-type Matchup = [string, string]
 type GameCategory = {
   [key: string]: string[]
 }
