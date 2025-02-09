@@ -1,14 +1,9 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 
 export default function Home() {
-  const router = useRouter()
-  const randomColors = ["text-blue-500", "text-green-600", "text-yellow-600"]
-  const randomColor = randomColors[Math.floor(Math.random() * randomColors.length)]
-
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-2xl w-full text-center space-y-8">
