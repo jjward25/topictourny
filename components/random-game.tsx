@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { games } from "@/data/bracket_list"
@@ -28,7 +28,17 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
   const [winnersTwo, setWinnersTwo] = useState<string[]>(["", ""])
   const [winnerSeedsTwo, setWinnerSeedsTwo] = useState<string[]>(["", ""])
   const [winnersThree, setWinnersThree] = useState<string[]>([""])
-  const [winnerSeedsThree, setWinnerSeedsThree] = useState<string[]>([""])
+
+  const selectRandomGame = useCallback(() => {
+    const randomIndex = Math.floor(Math.random() * games.length)
+    const randomGame = games[randomIndex] as unknown as GameCategory
+    const category = Object.keys(randomGame)[0]
+    const nominees = randomGame[category]
+    const shuffledNominees = shuffleArray([...nominees])
+    const randomizedSeeds = shuffleArray([...defaultSeeds])
+    setGame({ category, nominees: shuffledNominees, seeds: randomizedSeeds })
+    resetGameState()
+  }, [])
 
   useEffect(() => {
     if (initialGame) {
@@ -39,18 +49,7 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
     } else {
       selectRandomGame()
     }
-  }, [initialGame])
-
-  const selectRandomGame = () => {
-    const randomIndex = Math.floor(Math.random() * games.length)
-    const randomGame = games[randomIndex] as unknown as GameCategory // double assertion
-    const category = Object.keys(randomGame)[0]
-    const nominees = randomGame[category]
-    const shuffledNominees = shuffleArray([...nominees])
-    const randomizedSeeds = shuffleArray([...defaultSeeds])
-    setGame({ category, nominees: shuffledNominees, seeds: randomizedSeeds })
-    resetGameState()
-  }
+  }, [initialGame, selectRandomGame])
 
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array]
@@ -67,7 +66,6 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
     setWinnersTwo(["", ""])
     setWinnerSeedsTwo(["", ""])
     setWinnersThree([""])
-    setWinnerSeedsThree([""])
   }
 
   const handleWinnerSelection = (nominee: string, round: number, matchup: number, seed: string) => {
@@ -87,7 +85,6 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
       setWinnerSeedsTwo(newSeeds)
     } else if (round === 3) {
       setWinnersThree([nominee])
-      setWinnerSeedsThree([seed])
       // Game over logic
       alert(`The winner is: ${nominee}`)
       selectRandomGame()
