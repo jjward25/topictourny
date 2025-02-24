@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { games } from "@/data/bracket_list"
+import ReactConfetti from "react-confetti"
 
 type GameCategory = {
   [key: string]: string[]
@@ -26,6 +27,8 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
   const [winnersTwo, setWinnersTwo] = useState<string[]>(["", ""])
   const [winnerSeedsTwo, setWinnerSeedsTwo] = useState<string[]>(["", ""])
   const [winnersThree, setWinnersThree] = useState<string[]>([""])
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [winner, setWinner] = useState<string | null>(null)
 
   const selectRandomGame = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * games.length)
@@ -84,8 +87,13 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
     } else if (round === 3) {
       setWinnersThree([nominee])
       // Game over logic
-      alert(`The winner is: ${nominee}`)
-      selectRandomGame()
+      setWinner(nominee)
+      setShowConfetti(true)
+      setTimeout(() => {
+        setShowConfetti(false)
+        setWinner(null)
+        selectRandomGame()
+      }, 5000) // Reset after 5 seconds
     }
   }
 
@@ -94,8 +102,11 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
   const roundOneComplete = winners.every(Boolean)
   const roundTwoComplete = winnersTwo.every(Boolean)
 
+  const winnerAnimation = "animate-spin-slow"
+
   return (
     <div className="min-h-screen bg-black text-gray-300 p-4">
+      {showConfetti && <ReactConfetti />}
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold text-blue-500 hover:text-blue-400">
@@ -112,9 +123,9 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
           </button>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex flex-col md:flex-row md:justify-between">
           {/* Round 1 */}
-          <div className="w-1/3">
+          <div className={`w-full md:w-1/3 ${roundOneComplete ? "hidden md:block" : "block"}`}>
             {[0, 1, 2, 3].map((matchup) => (
               <div key={matchup} className="mb-4 border border-blue-500 p-2">
                 {[0, 1].map((index) => {
@@ -137,7 +148,9 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
           </div>
 
           {/* Round 2 */}
-          <div className={`w-1/3 ${roundOneComplete ? "block" : "hidden"}`}>
+          <div
+            className={`w-full md:w-1/3 ${roundOneComplete ? "block" : "hidden"} ${roundTwoComplete ? "hidden md:block" : ""}`}
+          >
             {[0, 1].map((matchup) => (
               <div key={matchup} className="mb-4 border border-purple-500 p-2">
                 {[0, 1].map((index) => {
@@ -160,7 +173,7 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
           </div>
 
           {/* Final Round */}
-          <div className={`w-1/3 ${roundTwoComplete ? "block" : "hidden"}`}>
+          <div className={`w-full md:w-1/3 ${roundTwoComplete ? "block" : "hidden"}`}>
             <div className="mb-4 border border-green-500 p-2">
               {[0, 1].map((index) => {
                 const nominee = winnersTwo[index]
@@ -170,7 +183,9 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
                   <div
                     key={index}
                     onClick={() => handleWinnerSelection(nominee, 3, 0, seed)}
-                    className={`flex cursor-pointer ${isWinner ? "bg-green-500 text-white" : "hover:bg-green-500 hover:text-white"}`}
+                    className={`flex cursor-pointer ${
+                      isWinner ? `bg-green-500 text-white ${winnerAnimation}` : "hover:bg-green-500 hover:text-white"
+                    }`}
                   >
                     <div className="w-8 bg-green-500 text-white text-right pr-1">{seed}</div>
                     <div className="flex-grow pl-2">{nominee}</div>
@@ -181,6 +196,14 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
           </div>
         </div>
       </div>
+      {winner && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white text-black p-8 rounded-lg text-center">
+            <h2 className="text-3xl font-bold mb-4">The winner is:</h2>
+            <p className="text-4xl text-green-500">{winner}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
