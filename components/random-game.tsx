@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 import { games } from "@/data/bracket_list"
+import { MatchupCard, BracketPlaceholder } from "@/components/ui/matchup-card"
+import { BracketConnector } from "@/components/ui/bracket-connector"
+import { Button } from "@/components/ui/button"
+import { MarqueeLights } from "@/components/ui/marquee-lights"
 import ReactConfetti from "react-confetti"
 
 type GameCategory = {
@@ -102,109 +107,197 @@ export default function RandomGame({ initialGame }: RandomGameProps) {
   const roundOneComplete = winners.every(Boolean)
   const roundTwoComplete = winnersTwo.every(Boolean)
 
-  const winnerAnimation = "animate-spin-slow"
-
   return (
-    <div className="min-h-screen bg-black text-gray-300 p-4">
+    <div className="min-h-screen p-4">
       {showConfetti && <ReactConfetti />}
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <Link href="/" className="text-3xl font-bold text-blue-500 hover:text-blue-400">
+          <Link href="/" className="font-marquee text-2xl text-transparent bg-clip-text bg-gradient-to-r from-gold via-orange-400 to-secondary">
             The Bracket Game
           </Link>
           <Image src="/bracket.png" width={128} height={128} className="mx-auto my-4" alt="logo" />
-          <h2 className="text-2xl font-semibold mb-2">{game.category}</h2>
-          <p className="text-lg mb-4">Debate the best, or the worst...</p>
-          <button
-            onClick={selectRandomGame}
-            className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded"
-          >
-            Next Game
-          </button>
+          <h2 className="font-display text-2xl font-semibold mb-2 text-gold">{game.category}</h2>
+          <p className="text-lg text-muted mb-4">Debate the best, or the worst...</p>
+          <Button onClick={selectRandomGame}>Next Game</Button>
         </div>
 
-        <div className="flex flex-col md:flex-row md:justify-between">
-          {/* Round 1 */}
-          <div className={`w-full md:w-1/3 ${roundOneComplete ? "hidden md:block" : "block"}`}>
+        {/* Desktop: full bracket tree with connector lines */}
+        <div className="hidden md:grid grid-cols-[1fr_48px_1fr_48px_1fr] h-[520px]">
+          <div className="h-full flex flex-col justify-around">
+            {[0, 1, 2, 3].flatMap((matchup) =>
+              [0, 1].map((index) => {
+                const nominee = game.nominees[matchup * 2 + index]
+                const seed = game.seeds[matchup * 2 + index]
+                const isWinner = winners[matchup] === nominee
+                return (
+                  <MatchupCard
+                    key={`${matchup}-${index}`}
+                    nominee={nominee}
+                    seed={seed}
+                    accent="accent1"
+                    isWinner={isWinner}
+                    onClick={() => handleWinnerSelection(nominee, 1, matchup, seed)}
+                  />
+                )
+              }),
+            )}
+          </div>
+
+          <BracketConnector pairs={4} />
+
+          <div className="h-full flex flex-col justify-around">
+            {[0, 1].flatMap((matchup) =>
+              [0, 1].map((index) => {
+                const nominee = winners[matchup * 2 + index]
+                const seed = winnerSeeds[matchup * 2 + index]
+                if (!nominee) return <BracketPlaceholder key={`${matchup}-${index}`} />
+                const isWinner = winnersTwo[matchup] === nominee
+                return (
+                  <MatchupCard
+                    key={`${matchup}-${index}`}
+                    nominee={nominee}
+                    seed={seed}
+                    accent="accent2"
+                    isWinner={isWinner}
+                    onClick={() => handleWinnerSelection(nominee, 2, matchup, seed)}
+                  />
+                )
+              }),
+            )}
+          </div>
+
+          <BracketConnector pairs={2} />
+
+          <div className="h-full flex flex-col justify-around">
+            {[0, 1].map((index) => {
+              const nominee = winnersTwo[index]
+              const seed = winnerSeedsTwo[index]
+              if (!nominee) return <BracketPlaceholder key={index} />
+              const isWinner = winnersThree[0] === nominee
+              return (
+                <MatchupCard
+                  key={index}
+                  nominee={nominee}
+                  seed={seed}
+                  accent="accent3"
+                  isWinner={isWinner}
+                  animatePop={isWinner}
+                  onClick={() => handleWinnerSelection(nominee, 3, 0, seed)}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Mobile: one active round at a time */}
+        <div className="md:hidden flex flex-col">
+          <div className={`w-full space-y-4 ${roundOneComplete ? "hidden" : "block"}`}>
             {[0, 1, 2, 3].map((matchup) => (
-              <div key={matchup} className="mb-4 border border-blue-500 p-2">
+              <div key={matchup} className="space-y-2">
                 {[0, 1].map((index) => {
                   const nominee = game.nominees[matchup * 2 + index]
                   const seed = game.seeds[matchup * 2 + index]
                   const isWinner = winners[matchup] === nominee
                   return (
-                    <div
+                    <MatchupCard
                       key={index}
+                      nominee={nominee}
+                      seed={seed}
+                      accent="accent1"
+                      isWinner={isWinner}
                       onClick={() => handleWinnerSelection(nominee, 1, matchup, seed)}
-                      className={`flex cursor-pointer ${isWinner ? "bg-blue-500 text-white" : "hover:bg-blue-500 hover:text-white"}`}
-                    >
-                      <div className="w-8 bg-blue-500 text-white text-right pr-1">{seed}</div>
-                      <div className="flex-grow pl-2">{nominee}</div>
-                    </div>
+                    />
                   )
                 })}
               </div>
             ))}
           </div>
 
-          {/* Round 2 */}
-          <div
-            className={`w-full md:w-1/3 ${roundOneComplete ? "block" : "hidden"} ${roundTwoComplete ? "hidden md:block" : ""}`}
-          >
-            {[0, 1].map((matchup) => (
-              <div key={matchup} className="mb-4 border border-purple-500 p-2">
-                {[0, 1].map((index) => {
-                  const nominee = winners[matchup * 2 + index]
-                  const seed = winnerSeeds[matchup * 2 + index]
-                  const isWinner = winnersTwo[matchup] === nominee
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => handleWinnerSelection(nominee, 2, matchup, seed)}
-                      className={`flex cursor-pointer ${isWinner ? "bg-purple-500 text-white" : "hover:bg-purple-500 hover:text-white"}`}
-                    >
-                      <div className="w-8 bg-purple-500 text-white text-right pr-1">{seed}</div>
-                      <div className="flex-grow pl-2">{nominee}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-
-          {/* Final Round */}
-          <div className={`w-full md:w-1/3 ${roundTwoComplete ? "block" : "hidden"}`}>
-            <div className="mb-4 border border-green-500 p-2">
-              {[0, 1].map((index) => {
-                const nominee = winnersTwo[index]
-                const seed = winnerSeedsTwo[index]
-                const isWinner = winnersThree[0] === nominee
-                return (
-                  <div
-                    key={index}
-                    onClick={() => handleWinnerSelection(nominee, 3, 0, seed)}
-                    className={`flex cursor-pointer ${
-                      isWinner ? `bg-green-500 text-white ${winnerAnimation}` : "hover:bg-green-500 hover:text-white"
-                    }`}
-                  >
-                    <div className="w-8 bg-green-500 text-white text-right pr-1">{seed}</div>
-                    <div className="flex-grow pl-2">{nominee}</div>
+          <AnimatePresence>
+            {roundOneComplete && (
+              <motion.div
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                className={`w-full space-y-4 ${roundTwoComplete ? "hidden" : ""}`}
+              >
+                {[0, 1].map((matchup) => (
+                  <div key={matchup} className="space-y-2">
+                    {[0, 1].map((index) => {
+                      const nominee = winners[matchup * 2 + index]
+                      const seed = winnerSeeds[matchup * 2 + index]
+                      const isWinner = winnersTwo[matchup] === nominee
+                      return (
+                        <MatchupCard
+                          key={index}
+                          nominee={nominee}
+                          seed={seed}
+                          accent="accent2"
+                          isWinner={isWinner}
+                          onClick={() => handleWinnerSelection(nominee, 2, matchup, seed)}
+                        />
+                      )
+                    })}
                   </div>
-                )
-              })}
-            </div>
-          </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {roundTwoComplete && (
+              <motion.div
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full space-y-2"
+              >
+                {[0, 1].map((index) => {
+                  const nominee = winnersTwo[index]
+                  const seed = winnerSeedsTwo[index]
+                  const isWinner = winnersThree[0] === nominee
+                  return (
+                    <MatchupCard
+                      key={index}
+                      nominee={nominee}
+                      seed={seed}
+                      accent="accent3"
+                      isWinner={isWinner}
+                      animatePop={isWinner}
+                      onClick={() => handleWinnerSelection(nominee, 3, 0, seed)}
+                    />
+                  )
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-      {winner && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white text-black p-8 rounded-lg text-center">
-            <h2 className="text-3xl font-bold mb-4">The winner is:</h2>
-            <p className="text-4xl text-green-500">{winner}</p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {winner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="bg-surface border-2 border-gold shadow-spotlight shadow-glow-amber p-8 rounded-3xl text-center max-w-md w-full"
+            >
+              <MarqueeLights count={10} className="mb-6" />
+              <h2 className="font-marquee text-lg text-gold mb-4 tracking-wide">🏆 And The Winner Is 🏆</h2>
+              <p className="font-marquee text-3xl sm:text-4xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-gold via-orange-400 to-secondary [text-shadow:0_0_40px_rgba(255,200,51,0.35)]">
+                {winner}
+              </p>
+              <MarqueeLights count={10} className="mt-6" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-

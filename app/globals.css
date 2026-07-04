@@ -3,32 +3,55 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-rgb: 0, 0, 0;
+  --background: 250 45% 5%;
+  --foreground: 45 100% 97%;
+  --surface: 250 40% 11%;
+  --muted: 250 15% 68%;
+  --border: 255 25% 90%;
+  --input: 255 25% 22%;
+  --ring: 45 100% 55%;
+  --primary: 45 100% 55%;
+  --primary-foreground: 250 45% 8%;
+  --secondary: 340 100% 60%;
+  --secondary-foreground: 45 100% 97%;
+  --gold: 45 100% 55%;
+  --accent-1: 195 100% 55%;
+  --accent-2: 340 100% 62%;
+  --accent-3: 45 100% 55%;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% -5%, hsl(var(--gold) / 0.22), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 15%, hsl(var(--accent-2) / 0.16), transparent),
+    radial-gradient(ellipse 60% 40% at 5% 25%, hsl(var(--accent-1) / 0.14), transparent);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
-/* Import the provided CSS */
-.wrapper {
-  max-height: 100vh;
-  max-width: 100%;
-  height: 100vh;
-  width: 100%;
-  float: left;
-  display: flex;
-  text-align: center;
-  background-color: black;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: lightgrey;
-  box-sizing: border-box;
-  overflow: auto;
+::selection {
+  background-color: hsl(var(--primary) / 0.4);
 }
 
-/* Add other CSS classes from the provided files */
+::-webkit-scrollbar {
+  width: 10px;
+}
 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--surface));
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--gold) / 0.5);
+}
